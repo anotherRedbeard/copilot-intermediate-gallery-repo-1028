@@ -128,24 +128,58 @@ Then provide a "test maintenance checklist" for future UI changes.
 
 ## 🪝 Challenge 4: Hooks
 
-**Goal:** use a hook to identify broken links in a markdown file.
+**Goal:** prove that a file edit automatically triggers the hook, and that Copilot reports its broken-link findings.
 
 **Source:** [Hooks](https://github.com/github/awesome-copilot/tree/main/hooks)
 
 Hook used in this challenge: **Fix Broken Links**
 
-**Prerequisites:** [Fix Broken Links Hook Requirements](https://github.com/github/awesome-copilot/blob/main/hooks/fix-broken-links/README.md#requirements)
+**Prerequisites:** [Local hook setup and invocation details](../.github/hooks/fix-broken-links/README.md#configuration)
 
-1. View and review the Fix Broken Links hook in `.github/hooks/fix-broken-links/`
-2. Make the script executable with `chmod +x .github/hooks/fix-broken-links/link-fix.sh` OR `chmod +x .github/hooks/fix-broken-links/link-fix.ps1` depending on your preferred shell.
-3. Run the hook with `bash .github/hooks/fix-broken-links/link-fix.sh ./demos/customize-copilot-option-2.md` in your terminal. If you are using PowerShell, use the .ps1 script.
-4. Observe the output and confirm that it identifies broken links in this document. Decide if you want to remove the broken link, custom replace it with a valid link, or skip it.
+### Set up automatic execution
 
-**Broken Link**
+1. Review [the hook configuration](../.github/hooks/hooks.json) and [the hook implementation](../.github/hooks/fix-broken-links/link-fix.ps1). Confirm the configuration registers `postToolUse`.
+2. Ensure **PowerShell 7+ (`pwsh`)** is available on the host running Copilot. This repository's configuration uses the PowerShell implementation on all platforms, including macOS; making the Bash script executable does not activate this hook.
+3. Start a **new agent session** in this repository after changing hook configuration. Confirm that your selected session target supports and loads repository hooks. An MCP server entry alone does not register lifecycle hooks.
+
+### Trigger the hook through an actual edit
+
+Run this prompt in Agent mode:
+
 ```markdown
-- An HTML anchor:
-  <a href="https://github.com/github/awesome-copilot/this-page-does-not-exist-404">read more</a>
+Test the automatic Fix Broken Links postToolUse hook.
+
+Edit hook-test.md using a file-edit tool, preserving its existing content.
+Append this link:
+
+[Workshop resource](https://example.com/workshop-page-does-not-exist)
+
+If that exact URL already exists, append a new link with a fresh numeric
+suffix in the path (for example, workshop-page-does-not-exist-2).
+There must be a real file change on every test attempt.
+
+Do not run the link checker manually, invoke its script, make your own HTTP
+requests, or change the hook configuration. Leave the broken links in place.
+
+Inspect the automatic hook context returned with the edit's tool result.
+In your final response:
+- Quote the hook's "[fix-broken-links] Checked ..." summary.
+- Report the total number of broken links it actually reported.
+- List EVERY reported broken URL and its HTTP status, including pre-existing
+  broken links, not just the link you added.
+- If no hook report is returned, say "Automatic hook execution was not
+  demonstrated." Do not infer success from the edit or run a manual fallback.
 ```
+
+### Verify the evidence
+
+- **Pass:** the edit tool's result includes automatic hook context with `[fix-broken-links] Checked ...`, and Copilot quotes that summary and lists all reported broken URLs and statuses.
+- **Example:** if the file contains the three earlier broken links plus the new workshop link, the report should show **4 links checked and 4 broken links (404)**. Use the actual report rather than assuming this count; repeated attempts or different file contents change the totals.
+- **Not proof:** a successful edit alone, a manually executed checker, or a claim that the hook ran without its returned report.
+- **No report:** inspect hook discovery, `pwsh` availability, and runtime error logs for the selected session target. A hook may return context to Copilot without displaying a separate UI notification, so ask for the returned context rather than relying on a toast.
+- **Different statuses:** report what the hook actually returned. Network errors, timeouts, or unexpected HTTP responses do not demonstrate the expected 404 detection.
+
+Running a script with a file path tests the checker itself, **not** automatic hook execution. Keep that separate from this challenge.
 
 ---
 
@@ -156,4 +190,4 @@ Mark off each item as you complete it:
 - [ ] Completed the Instructions challenge and captured before/after quality differences
 - [ ] Completed the Agents challenge and compared mode behavior
 - [ ] Completed the Skills challenge with a repeatable trigger workflow
-- [ ] Completed the Hooks challenge and confirmed the broken link detection
+- [ ] Completed the Hooks challenge with a real edit, quoted automatic hook output, and a count and list of every reported broken link

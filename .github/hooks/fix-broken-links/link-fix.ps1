@@ -44,22 +44,59 @@ if ($ScriptArgs.Count -eq 0 -and [Console]::IsInputRedirected) {
   $raw = [Console]::In.ReadToEnd()
   if ($raw.Trim()) {
     try {
-      $json = $raw | ConvertFrom-Json
+      $json = $raw | ConvertFrom-Json -ErrorAction Stop
+      if ($null -eq $json -or $json -isnot [pscustomobject]) {
+        throw 'Expected a hook event object.'
+      }
       $tool = $json.toolName; if (-not $tool) { $tool = $json.tool_name }
-      if ($tool) {
-        if ($tool -in 'editFiles','edit','write','str_replace_editor','create_file','multiEdit','applyPatch') {
-          # Only the files this edit tool just changed - never a wider repo scan.
-          $hookFiles = $json.tool_input.files; if (-not $hookFiles) { $hookFiles = $json.toolInput.files }
-          if (-not $hookFiles) { $hookFiles = $json.tool_input.path; if (-not $hookFiles) { $hookFiles = $json.toolInput.path } }
-          if ($hookFiles) { foreach ($hf in $hookFiles) { [void]$ScriptArgs.Add([string]$hf) } }
-        }
-        else {
-          # Different tool (bash, read, etc.) - nothing to check
-          exit 0
+      if (-not ($tool -is [string]) -or -not $tool.Trim()) {
+        throw 'Expected toolName or tool_name in hook event.'
+      }
+      $toolKind = ($tool -split '\.')[-1]
+      if ($toolKind -notin 'editFiles','edit','write','create','str_replace_editor','create_file','multiEdit','applyPatch','apply_patch') {
+        exit 0
+      }
+      $inputArgs = $json.toolArgs
+      if ($null -eq $inputArgs) { $inputArgs = $json.tool_input }
+      if ($null -eq $inputArgs) { $inputArgs = $json.toolInput }
+      if ($inputArgs -is [string]) {
+        if ($toolKind -in 'applyPatch','apply_patch' -and $inputArgs.TrimStart().StartsWith('*** Begin Patch')) {
+          $inputArgs = [pscustomobject]@{ input = $inputArgs }
+        } else {
+          $inputArgs = $inputArgs | ConvertFrom-Json -ErrorAction Stop
         }
       }
-      # No tool context - called manually with piped input, fall through
-    } catch { }
+      foreach ($field in 'path','file_path','filePath') {
+        $value = $inputArgs.$field
+        if ($value -is [string]) { [void]$ScriptArgs.Add($value) }
+      }
+      foreach ($file in $inputArgs.files) {
+        if ($file -is [string]) { [void]$ScriptArgs.Add($file) }
+        else {
+          foreach ($field in 'path','file_path','filePath') {
+            $value = $file.$field
+            if ($value -is [string]) { [void]$ScriptArgs.Add($value) }
+          }
+        }
+      }
+      if ($toolKind -in 'applyPatch','apply_patch') {
+        $patch = $inputArgs.input
+        if (-not $patch) { $patch = $inputArgs.patch }
+        if ($patch -is [string]) {
+          foreach ($line in ($patch -split '\r?\n')) {
+            if ($line -match '^\*\*\* (?:Add File|Update File|Move to): (.+)$') {
+              [void]$ScriptArgs.Add($Matches[1])
+            }
+          }
+        }
+      }
+    } catch {
+      [Console]::Error.WriteLine("[fix-broken-links] Invalid hook payload: $($_.Exception.Message)")
+      exit 1
+    }
+  } else {
+    [Console]::Error.WriteLine('[fix-broken-links] Expected a hook payload on stdin.')
+    exit 1
   }
 }
 
@@ -112,7 +149,7 @@ function Split-Url {
 function Get-Urls {
   param([string]$File)
   $text = [System.IO.File]::ReadAllText($File)
-  [regex]::Matches($text, 'https?://[^"''<> )]+', 'IgnoreCase') |
+  [regex]::Matches($text, 'https?://[^"''<>\s)`]+', 'IgnoreCase') |
     ForEach-Object { $_.Value -replace '[.,;:]+$','' } |
     Sort-Object -Unique
 }
@@ -285,7 +322,9 @@ foreach ($f in (Get-InputFiles)) {
   [void]$FILES.Add($f)
 }
 
-if ($FILES.Count -eq 0) { exit 0 }
+if ($FILES.Count -eq 0) {
+  exit 0
+}
 
 # ── Scan ──────────────────────────────────────────────────────────────────────
 
@@ -294,6 +333,7 @@ $B_URL    = [System.Collections.Generic.List[string]]::new()
 $B_STATUS = [System.Collections.Generic.List[string]]::new()
 $B_ALT    = [System.Collections.Generic.List[object]]::new()
 $SEO_LINES = [System.Collections.Generic.List[string]]::new()
+$CheckedLinks = 0
 
 foreach ($file in $FILES) {
   foreach ($line in (Get-SeoIssues $file)) {
@@ -302,26 +342,41 @@ foreach ($file in $FILES) {
 
   $urls = @(Get-Urls $file)
   if ($urls.Count -eq 0) { continue }
+  $CheckedLinks += $urls.Count
 
   if ($HaveParams -and $urls.Count -gt $LIMIT) {
     $ans = Read-Answer "  $file has $($urls.Count) links (limit $LIMIT). Continue? [Y/n] "
     if ($ans -in 'n','N','no','NO') { continue }
   }
 
-  Write-Host ""
-  Write-Host "  Checking $($urls.Count) link(s) in $file ..."
+  if (-not $IsHook) {
+    Write-Host ""
+    Write-Host "  Checking $($urls.Count) link(s) in $file ..."
+  }
   foreach ($url in $urls) {
     $status = Get-HttpStatus $url
     if ($status -eq '200') { continue }
-    Write-Host "    BROKEN ($status) $url"
-    # Only look up replacements when files were passed; otherwise just list.
+    if (-not $IsHook) { Write-Host "    BROKEN ($status) $url" }
+    # Hook runs only report; replacement lookups can exceed the hook timeout.
     $alts = @()
-    if ($HaveParams) { $alts = Get-SuggestedAlts $url 6 }
+    if ($HaveParams -and -not $IsHook) { $alts = Get-SuggestedAlts $url 6 }
     [void]$B_FILE.Add($file)
     [void]$B_URL.Add($url)
     [void]$B_STATUS.Add($status)
     [void]$B_ALT.Add($alts)
   }
+}
+
+if ($IsHook) {
+  $report = [System.Collections.Generic.List[string]]::new()
+  [void]$report.Add("[fix-broken-links] Checked $CheckedLinks link(s) in $($FILES.Count) edited file(s): $($FILES -join ', ').")
+  for ($i = 0; $i -lt $B_URL.Count; $i++) {
+    [void]$report.Add("BROKEN ($($B_STATUS[$i])) $($B_URL[$i]) in $($B_FILE[$i])")
+  }
+  if ($B_URL.Count -eq 0) { [void]$report.Add('No broken links found.') }
+  foreach ($issue in $SEO_LINES) { [void]$report.Add("SEO: $issue") }
+  @{ additionalContext = $report -join "`n" } | ConvertTo-Json -Compress
+  exit 0
 }
 
 # ── SEO report ────────────────────────────────────────────────────────────────

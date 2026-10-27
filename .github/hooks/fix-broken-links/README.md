@@ -7,22 +7,23 @@ tags: ['links', 'seo', 'html', 'markdown', 'post-tool-use']
 # Fix Broken Links Hook
 
 Scans recently-changed web files for broken hyperlinks after each GitHub Copilot
-tool use. For each broken URL the hook tries common spelling variations, then hands
-the link to the Copilot CLI agent for suggested replacements, and presents an
-interactive fix menu. Generic anchor text (`click here`, `read more`, etc.) is
-flagged as an SEO issue.
+edit and returns the results to the agent. When run manually with file paths,
+the script tries common spelling variations, asks the Copilot CLI agent for
+suggested replacements, and presents an interactive fix menu. Generic anchor text
+(`click here`, `read more`, etc.) is flagged as an SEO issue.
 
 ## Overview
 
 Broken links accumulate silently in web projects. Running on the `postToolUse`
 event, this hook checks the web files the agent just edited — and only those —
-right after each change, so you can fix, replace, or remove each broken link in
-the same terminal session.
+right after each change. Automatic hook runs report findings without changing
+files or launching replacement lookups, keeping them within the hook timeout.
 
-The hook has two modes:
+The script has three modes:
 
-- **With file paths** (the edited files injected from the hook payload, or paths
-  passed on the command line): it checks each link, looks up replacement
+- **Automatic hook**: it checks links in the edited files and returns a JSON
+  `additionalContext` report to the agent. It does not show a terminal menu.
+- **With command-line file paths**: it checks each link, looks up replacement
   candidates, and presents the interactive fix menu.
 - **With no file arguments**: it simply lists the broken links it finds — no
   replacement lookups and no prompts.
@@ -35,8 +36,8 @@ The hook has two modes:
  never a full repo scan
 - **Format-agnostic link scan**: extracts every `http(s)` URL with `grep`, covering HTML, Markdown,
  JS/TS, JSON, CSS, SQL, and templates at once
-- **Automatic URL healing**: tries www, https, and trailing-slash variations
-- **Agent-assisted suggestions**: hands the broken link to the Copilot CLI agent (a lightweight,
+- **Manual URL healing**: tries www, https, and trailing-slash variations
+- **Manual agent-assisted suggestions**: hands the broken link to the Copilot CLI agent (a lightweight,
  low-token `gpt-5-mini` prompt with no tools) for replacement candidates; if the CLI is missing or
   errors, it simply offers none
 - **SEO audit**: flags anchor text that is too generic to benefit search ranking
@@ -61,9 +62,15 @@ The hook has two modes:
 
 3. Commit the hook configuration to your repository's default branch.
 
+   This is needed for the cloud agent. For local use, start a new session in
+   this repository after changing the hook configuration.
+
 ## Configuration
 
-The hook is configured in `hooks.json` to run on the `postToolUse` event:
+The hook is configured in [../hooks.json](../hooks.json) to run on `postToolUse`.
+The POSIX command requires `pwsh` on PATH to avoid macOS Bash 3.2 incompatibility.
+Both configured commands use the PowerShell implementation. The standalone Bash
+port is not used by this configuration.
 
 ```json
 {
@@ -72,7 +79,7 @@ The hook is configured in `hooks.json` to run on the `postToolUse` event:
     "postToolUse": [
       {
         "type": "command",
-        "bash": ".github/hooks/fix-broken-links/link-fix.sh",
+        "bash": "pwsh -NoProfile -File .github/hooks/fix-broken-links/link-fix.ps1",
         "powershell": ".github/hooks/fix-broken-links/link-fix.ps1",
         "cwd": ".",
         "timeoutSec": 120
@@ -81,6 +88,35 @@ The hook is configured in `hooks.json` to run on the `postToolUse` event:
   }
 }
 ```
+
+### Verify invocation
+
+To test automatic execution, ask Copilot to add a known broken URL to a temporary
+Markdown file. The hook returns a JSON `additionalContext` field containing
+`[fix-broken-links] Checked ...` and `BROKEN (404)` findings to the agent with the
+edit's tool result. Ask the agent to quote that report to confirm the scan.
+Successful runs do not necessarily display a separate hook message in the UI.
+Read-only tool calls are skipped silently. Malformed or empty hook payloads
+report an error on stderr. No diagnostic log file is created.
+
+Running the script manually with a file path tests the checker, but does not
+confirm automatic hook invocation.
+
+The PowerShell parser accepts Copilot's `toolName`/`toolArgs` (including
+JSON-encoded arguments) and the `tool_name`/`tool_input` and `toolInput`
+variants. It handles file paths and add/update/move paths in both raw-text and
+object-form `apply_patch` payloads. Read, search, shell, and MCP documentation
+tools are skipped on purpose.
+
+No observable output after an edit means execution has not been demonstrated:
+check hook discovery, interpreter availability, and runtime error logs. In VS Code,
+select the intended session target and inspect its Hooks customization view.
+The shared Copilot runtime and older Local runtime have different hook settings
+and payload conventions; a custom SDK host must support hook loading.
+An MCP server entry in `.vscode/mcp.json` does not register lifecycle hooks.
+PowerShell must also be installed on remote/cloud hosts; installing it locally
+does not make it available there. Automatic hooks return structured results;
+standalone non-interactive runs print a report rather than show a usable menu.
 
 ## Supported Source Types
 
@@ -159,11 +195,12 @@ hook stops after the broken-link list — the menu above is skipped.
 ## File Structure
 
 ```markdown
-.github/hooks/fix-broken-links/
+.github/hooks/
 ├── hooks.json      GitHub Copilot hook configuration
-├── link-fix.sh     Bash hook implementation
-├── link-fix.ps1    PowerShell 7+ port
-└── README.md       This file
+└── fix-broken-links/
+    ├── link-fix.sh     Bash hook implementation
+    ├── link-fix.ps1    PowerShell 7+ port
+    └── README.md       This file
 ```
 
 ## Limitations
