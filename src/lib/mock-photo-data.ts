@@ -13,7 +13,7 @@ export interface Photo {
 export const mockPhotos: Photo[] = [
   {
     id: '1',
-    url: '/placeholder-1.jpg',
+    url: '/samples/sample-photo.svg',
     title: 'Sunset Landscape',
     tags: ['landscape', 'sunset', 'nature'],
     likes: 124,

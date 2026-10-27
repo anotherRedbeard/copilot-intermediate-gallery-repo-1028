@@ -207,3 +207,13 @@ function StatsSection({ stats }) {
   );
 }
 ```
+
+## Photo Downloads
+
+The Download button in `GalleryGrid` uses `usePhotoDownload` (`src/hooks/usePhotoDownload.ts`), which wraps `downloadPhoto` in `src/lib/download-photo.ts`. The helper fetches `photo.url`, builds a filename from `photo.title`, and triggers a browser download. It cleans up the temporary anchor and object URL afterwards.
+
+- Each photo has its own loading state, and duplicate clicks are ignored while a download runs.
+- Failures (missing file, HTTP error, network error) appear in a `role="alert"` message on the card, and the button can be used to retry.
+- `public/samples/sample-photo.svg` is a local sample asset used by the first mock photo. The other mock photos still point at placeholder URLs and will show the "not found" error.
+
+Run `npm test` for the download tests and `npm run typecheck` for type checking.

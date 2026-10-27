@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart, Download, Share2, Eye, Tag } from 'lucide-react';
+import { Heart, Download, Share2, Eye, Tag, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Photo, mockPhotos } from '@/lib/mock-photo-data';
+import { usePhotoDownload } from '@/hooks/usePhotoDownload';
 
 interface GalleryGridProps {
   limit?: number;
@@ -26,6 +27,7 @@ export function GalleryGrid({
 }: GalleryGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [likedPhotos, setLikedPhotos] = useState<Set<string>>(new Set());
+  const { download, isDownloading, getError } = usePhotoDownload();
 
   // Filter photos based on selected tags and search query
   const filteredPhotos = mockPhotos.filter(photo => {
@@ -102,7 +104,7 @@ export function GalleryGrid({
               </div>
 
               {/* Action Buttons */}
-              <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className={`absolute top-3 right-3 flex gap-2 transition-opacity duration-300 group-focus-within:opacity-100 ${getError(photo.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 <button
                   onClick={() => toggleLike(photo.id)}
                   className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
@@ -113,14 +115,40 @@ export function GalleryGrid({
                 >
                   <Heart className={`h-4 w-4 ${likedPhotos.has(photo.id) ? 'fill-current' : ''}`} />
                 </button>
-                <button className="p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-sm transition-colors">
-                  <Download className="h-4 w-4" />
+                <button
+                  type="button"
+                  onClick={() => download(photo)}
+                  disabled={isDownloading(photo.id)}
+                  aria-label={
+                    isDownloading(photo.id)
+                      ? `Downloading ${photo.title}`
+                      : getError(photo.id)
+                        ? `Retry download of ${photo.title}`
+                        : `Download ${photo.title}`
+                  }
+                  aria-busy={isDownloading(photo.id)}
+                  className="p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-sm transition-colors focus:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isDownloading(photo.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                 </button>
                 <button className="p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-sm transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
+
+            {getError(photo.id) && (
+              <div
+                role="alert"
+                className="mx-4 mt-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              >
+                {getError(photo.id)} Use the download button to retry.
+              </div>
+            )}
 
             {/* Photo Info */}
             <div className="p-4">
