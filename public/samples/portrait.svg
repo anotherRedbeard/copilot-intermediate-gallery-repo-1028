@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Sample studio portrait illustration</title>
+  <path fill="#ddd6fe" d="M0 0h800v600H0z"/>
+  <circle fill="#c4b5fd" cx="400" cy="290" r="245"/>
+  <path fill="#6d28d9" d="M175 600v-65a225 225 0 0 1 450 0v65z"/>
+  <ellipse fill="#d6a77a" cx="400" cy="245" rx="105" ry="130"/>
+  <path fill="#292524" d="M292 245v-70c0-140 216-140 216 0v35q-90 0-135-65-20 75-81 100"/>
+  <path fill="#f5d0a9" d="M365 357h70v55q-35 30-70 0z"/>
+</svg>

@@ -179,6 +179,35 @@ export default function UploadPage() {
 }
 ```
 
+## Gallery Photo Downloads
+
+Every `GalleryGrid` includes an always-visible, keyboard- and touch-accessible
+Download button for each photo. `PhotoDownloadButton` owns that photo's pending
+and retry state; it does not share pagination loading state. `downloadPhoto` in
+`src/lib/download-photo.ts` fetches the selected photo's `url`, checks the HTTP
+response and nonempty supported image Content-Type, and hands a temporary file
+URL to the browser. Filenames use a sanitized title and ID, with an extension
+from the returned image MIME type (JPEG, PNG, WebP, GIF, AVIF, SVG, BMP, TIFF, or ICO).
+Temporary links are removed immediately and successful object URLs are released
+after a short delay so the browser can consume them.
+
+The demo uses original local SVG illustrations in `public/samples/`, reused
+across mock entries, rather than missing photo placeholders. These are sample
+artwork, not the photographs described by the mock metadata. Replace each
+`Photo.url` with an available image file to use your own photos; previews and
+downloads use the same source.
+
+Missing files, HTTP errors, empty/non-image responses, and network failures show
+an accessible error with a retry action. External sources must permit browser
+CORS fetching and return a supported image Content-Type. Opaque responses are
+not a workaround; there is no remote proxy or external credential forwarding.
+Previews load the source directly without using the Next.js image optimizer.
+Browser security policies may block downloads. Handing off a file does not
+prove that the user saved it, and the mock download counts are not updated.
+
+Run focused download tests with `npm test` (install Chromium once with
+`npx playwright install chromium`). The suite starts the local development server.
+
 ## Benefits of Using These Components
 
 1. **Consistency** - Maintain the same look and feel across all pages

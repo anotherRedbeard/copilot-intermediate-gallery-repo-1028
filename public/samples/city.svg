@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Sample city architecture illustration</title>
+  <path fill="#0f172a" d="M0 0h800v600H0z"/>
+  <circle fill="#fef3c7" cx="650" cy="100" r="45"/>
+  <path fill="#334155" d="M0 290h150v310H0zm180-130h180v440H180zm210 75h140v365H390zm170-30h180v395H560z"/>
+  <path stroke="#fde68a" stroke-width="18" stroke-dasharray="25 30" d="M45 325v240m65-240v240m120-360v360m75-360v360m125-285v285m60-285v285m110-310v310m90-310v310"/>
+  <path fill="#475569" d="M0 570h800v30H0z"/>
+</svg>
