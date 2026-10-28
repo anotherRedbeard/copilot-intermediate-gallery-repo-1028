@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -9,11 +11,9 @@
   --font-sans: var(--font-geist-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -27,7 +27,7 @@ body {
   background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .page-gradient {
     background: linear-gradient(to bottom right, #0f172a, #1e293b);
   }
@@ -44,7 +44,7 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .card-base {
     background-color: #1e293b;
   }
@@ -61,7 +61,7 @@ body {
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .card-elevated {
     background-color: #1e293b;
   }
@@ -74,7 +74,7 @@ body {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .card-feature {
     background-color: #1e293b;
   }
@@ -87,7 +87,7 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .card-stats {
     background-color: #1e293b;
   }
@@ -124,7 +124,7 @@ body {
   background-color: #f9fafb;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .btn-secondary {
     border-color: #4b5563;
     color: #d1d5db;
@@ -168,7 +168,7 @@ body {
   color: #111827;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .nav-link {
     color: #d1d5db;
   }
@@ -211,7 +211,7 @@ body {
   border-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .form-input,
   .form-select {
     border-color: #4b5563;
@@ -249,7 +249,7 @@ body {
   color: #9a3412;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .status-active {
     background-color: #14532d;
     color: #bbf7d0;
@@ -314,7 +314,7 @@ body {
   background-color: #fed7aa;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .icon-container-blue { background-color: #1e3a8a; }
   .icon-container-green { background-color: #14532d; }
   .icon-container-purple { background-color: #581c87; }
@@ -342,7 +342,7 @@ body {
   background-color: #f9fafb;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .hover-bg:hover {
     background-color: rgba(55, 65, 81, 0.5);
   }
@@ -363,7 +363,7 @@ body {
   transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .progress-bar {
     background-color: #374151;
   }
@@ -388,7 +388,7 @@ body {
   border-color: #60a5fa;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .drop-zone {
     border-color: #4b5563;
   }
@@ -412,7 +412,7 @@ body {
   background-color: #f9fafb;
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .table-row {
     border-color: #374151;
   }
@@ -451,7 +451,7 @@ body {
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
+:root.dark {
   .gallery-card {
     background-color: #1e293b;
   }

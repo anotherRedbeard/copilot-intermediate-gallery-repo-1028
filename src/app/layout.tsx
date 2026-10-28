@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Link from "next/link";
 import { Camera } from "lucide-react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,13 +15,25 @@ export const metadata: Metadata = {
   description: "A curated collection of photographs and creative works showcasing a personal portfolio.",
 };
 
+const themeInitializationScript = `
+  (() => {
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = storedTheme === "dark" || (storedTheme !== "light" && prefersDark);
+    document.documentElement.classList.toggle("dark", isDark);
+  })();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
+      </head>
       <body
         className={`${geistSans.variable} antialiased`}
       >
@@ -35,6 +48,7 @@ export default function RootLayout({
                 </h1>
               </Link>
               <nav className="flex items-center gap-6">
+                <ThemeToggle />
                 <Link href="/gallery" className="nav-link">
                   Gallery
                 </Link>
@@ -49,7 +63,6 @@ export default function RootLayout({
           </div>
         </header>
         {children}
-        {/* REPLACE THIS COMMENT */}
       </body>
     </html>
   );
