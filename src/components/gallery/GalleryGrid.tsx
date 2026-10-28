@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { Heart, Download, Share2, Eye, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Photo, mockPhotos } from '@/lib/mock-photo-data';
+import { PhotoDownloadButton } from './PhotoDownloadButton';
 
 interface GalleryGridProps {
   limit?: number;
@@ -76,17 +78,14 @@ export function GalleryGrid({
             className="group relative card-elevated overflow-hidden"
           >
             {/* Photo Container */}
-            <div className="relative aspect-[4/3] overflow-hidden">
-              {/* Placeholder colored rectangles since we don't have actual images */}
-              <div 
-                className={`w-full h-full ${
-                  index % 6 === 0 ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
-                  index % 6 === 1 ? 'bg-gradient-to-br from-green-400 to-green-600' :
-                  index % 6 === 2 ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
-                  index % 6 === 3 ? 'bg-gradient-to-br from-pink-400 to-pink-600' :
-                  index % 6 === 4 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                  'bg-gradient-to-br from-red-400 to-red-600'
-                }`}
+            <div className="relative aspect-[4/3]">
+              <Image
+                src={photo.url}
+                alt={photo.title}
+                fill
+                unoptimized
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover"
               />
               
               {/* Overlay */}
@@ -102,7 +101,7 @@ export function GalleryGrid({
               </div>
 
               {/* Action Buttons */}
-              <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute top-3 right-3 flex items-center gap-2">
                 <button
                   onClick={() => toggleLike(photo.id)}
                   className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
@@ -113,9 +112,7 @@ export function GalleryGrid({
                 >
                   <Heart className={`h-4 w-4 ${likedPhotos.has(photo.id) ? 'fill-current' : ''}`} />
                 </button>
-                <button className="p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-sm transition-colors">
-                  <Download className="h-4 w-4" />
-                </button>
+                <PhotoDownloadButton photo={photo} />
                 <button className="p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-sm transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>

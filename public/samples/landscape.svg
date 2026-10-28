@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Sample sunset landscape illustration</title>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#fda4af"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h800v600H0z"/>
+  <circle fill="#fde68a" cx="560" cy="210" r="85"/>
+  <path fill="#475569" d="M0 430 210 180 470 440 640 290 800 430v170H0z"/>
+  <path fill="#1e3a5f" d="m0 510 290-150 260 160 250-70v150H0z"/>
+  <path fill="#0f766e" d="M0 560q200-90 400 0t400-20v60H0z"/>
+</svg>
